@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tollywood Picks - Telugu Movie Picker</title>
+    <title>Abhiram's Picks - Telugu Movie Picker</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <script type="importmap">
@@ -84,16 +84,14 @@
 
     <div class="max-w-md w-full bg-slate-800 rounded-2xl p-8 card-glow border border-slate-700 overflow-hidden relative">
         
-        <!-- Header -->
         <div class="text-center mb-6">
             <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-700 text-amber-500 mb-4">
                 <i class="fas fa-video text-xl"></i>
             </div>
-            <h1 class="text-3xl font-bold mb-2">Tolly<span class="gradient-text">Picks</span></h1>
-            <p class="text-slate-400 text-sm">Discover the best of Telugu Cinema</p>
+            <h1 class="text-3xl font-bold mb-2">Abhiram's <span class="gradient-text">Picks</span></h1>
+            <p class="text-slate-400 text-sm">Abhiram's Collection of Telugu Cinema</p>
         </div>
 
-        <!-- TABS -->
         <div class="flex border-b border-slate-700 mb-6">
             <button onclick="switchTab('manual')" id="tab-manual" class="flex-1 py-2 text-sm font-semibold text-amber-500 border-b-2 border-amber-500 transition-colors">
                 Genre Picker
@@ -103,7 +101,6 @@
             </button>
         </div>
 
-        <!-- MANUAL PICKER SECTION -->
         <div id="manual-section" class="space-y-6">
             <div>
                 <label class="block text-slate-300 text-sm font-semibold mb-2" for="genre">
@@ -131,7 +128,6 @@
             </button>
         </div>
 
-        <!-- AI PICKER SECTION -->
         <div id="ai-section" class="space-y-6 hidden">
             <div>
                 <label class="block text-slate-300 text-sm font-semibold mb-2" for="ai-prompt">
@@ -146,12 +142,10 @@
             </button>
         </div>
         
-        <!-- Toast notification for reset -->
         <div id="resetToast" class="hidden text-xs text-center text-amber-400 italic mt-2 transition-opacity">
             Seen all movies in this genre. Restarting list!
         </div>
 
-        <!-- Result Section (Hidden by default) -->
         <div id="resultContainer" class="hidden mt-8 pt-8 border-t border-slate-700 relative">
             <div class="animate-pop text-center">
                 <div class="text-amber-500 text-xs font-bold uppercase tracking-wider mb-2">Recommended Watch</div>
@@ -170,7 +164,6 @@
 
                 <p id="moviePlot" class="text-slate-300 text-sm italic mb-6 leading-relaxed"></p>
                 
-                <!-- AI Hype Box -->
                 <div id="hypeBox" class="hidden bg-purple-900/20 border border-purple-500/30 rounded-lg p-4 mb-6 text-left">
                     <div class="flex items-center gap-2 mb-2 text-purple-400 text-xs font-bold uppercase">
                         <i class="fas fa-sparkles"></i> AI Hype
@@ -187,7 +180,6 @@
                     </a>
                 </div>
                 
-                <!-- AI Hype Button -->
                 <button onclick="generateHype()" id="hypeBtn" class="w-full btn-ai text-white text-sm font-medium py-2 rounded transition-colors flex items-center justify-center gap-2">
                     <span>✨ Why Watch This? (AI)</span>
                 </button>
@@ -198,7 +190,6 @@
             </div>
         </div>
 
-        <!-- Empty State / Error -->
         <div id="errorMsg" class="hidden mt-4 text-center text-rose-400 text-sm"></div>
 
     </div>
