@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tollywood Picks - Telugu Movie Picker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/generative-ai": "https://esm.run/@google/generative-ai"
+        }
+      }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+
+        .gradient-text {
+            background: linear-gradient(to right, #fbbf24, #f59e0b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .card-glow {
+            box-shadow: 0 0 20px rgba(245, 158, 11, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .card-glow:hover {
+            box-shadow: 0 0 30px rgba(245, 158, 11, 0.2);
+            transform: translateY(-2px);
+        }
+
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.9); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+
+        .animate-pop {
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+        }
+
+        /* Loading spinner */
+        .loader {
+            border: 3px solid #1e293b;
+            border-radius: 50%;
+            border-top: 3px solid #f59e0b;
+            width: 24px;
+            height: 24px;
+            -webkit-animation: spin 1s linear infinite;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .platform-tag {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        /* AI Gradient Button */
+        .btn-ai {
+            background: linear-gradient(135deg, #4f46e5, #9333ea);
+        }
+        .btn-ai:hover {
+            background: linear-gradient(135deg, #4338ca, #7e22ce);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+
+    <div class="max-w-md w-full bg-slate-800 rounded-2xl p-8 card-glow border border-slate-700 overflow-hidden relative">
+        
+        <!-- Header -->
+        <div class="text-center mb-6">
+            <div class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-slate-700 text-amber-500 mb-4">
+                <i class="fas fa-video text-xl"></i>
+            </div>
+            <h1 class="text-3xl font-bold mb-2">Tolly<span class="gradient-text">Picks</span></h1>
+            <p class="text-slate-400 text-sm">Discover the best of Telugu Cinema</p>
+        </div>
+
+        <!-- TABS -->
+        <div class="flex border-b border-slate-700 mb-6">
+            <button onclick="switchTab('manual')" id="tab-manual" class="flex-1 py-2 text-sm font-semibold text-amber-500 border-b-2 border-amber-500 transition-colors">
+                Genre Picker
+            </button>
+            <button onclick="switchTab('ai')" id="tab-ai" class="flex-1 py-2 text-sm font-semibold text-slate-400 hover:text-slate-200 transition-colors">
+                ✨ AI Match
+            </button>
+        </div>
+
+        <!-- MANUAL PICKER SECTION -->
+        <div id="manual-section" class="space-y-6">
+            <div>
+                <label class="block text-slate-300 text-sm font-semibold mb-2" for="genre">
+                    What mood are you in?
+                </label>
+                <div class="relative">
+                    <select id="genre" onchange="resetCycle()" class="w-full appearance-none bg-slate-900 border border-slate-700 text-white py-3 px-4 pr-8 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent cursor-pointer transition-colors hover:bg-slate-850">
+                        <option value="" disabled selected>Select a Genre</option>
+                        <option value="Mass Action">Mass Action</option>
+                        <option value="Comedy">Comedy</option>
+                        <option value="Drama">Drama / Family</option>
+                        <option value="Thriller">Thriller / Mystery</option>
+                        <option value="Romance">Romance</option>
+                        <option value="Fantasy">Fantasy / Mythology</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-slate-400">
+                        <i class="fas fa-chevron-down text-xs"></i>
+                    </div>
+                </div>
+            </div>
+
+            <button onclick="pickMovie()" id="pickBtn" class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 px-4 rounded-lg transition-all transform active:scale-95 flex items-center justify-center gap-2 group">
+                <span>Suggest a Movie</span>
+                <i class="fas fa-film group-hover:rotate-12 transition-transform"></i>
+            </button>
+        </div>
+
+        <!-- AI PICKER SECTION -->
+        <div id="ai-section" class="space-y-6 hidden">
+            <div>
+                <label class="block text-slate-300 text-sm font-semibold mb-2" for="ai-prompt">
+                    Describe exactly what you want:
+                </label>
+                <textarea id="ai-prompt" rows="3" placeholder="e.g., A funny movie about college life with good music, or a thriller with a shocking twist." class="w-full bg-slate-900 border border-slate-700 text-white py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none text-sm placeholder-slate-500"></textarea>
+            </div>
+
+            <button onclick="askAIForMovie()" id="aiPickBtn" class="w-full btn-ai text-white font-bold py-3 px-4 rounded-lg transition-all transform active:scale-95 flex items-center justify-center gap-2 group">
+                <span>✨ Ask AI to Pick</span>
+                <i class="fas fa-magic group-hover:rotate-12 transition-transform"></i>
+            </button>
+        </div>
+        
+        <!-- Toast notification for reset -->
+        <div id="resetToast" class="hidden text-xs text-center text-amber-400 italic mt-2 transition-opacity">
+            Seen all movies in this genre. Restarting list!
+        </div>
+
+        <!-- Result Section (Hidden by default) -->
+        <div id="resultContainer" class="hidden mt-8 pt-8 border-t border-slate-700 relative">
+            <div class="animate-pop text-center">
+                <div class="text-amber-500 text-xs font-bold uppercase tracking-wider mb-2">Recommended Watch</div>
+                <h2 id="movieTitle" class="text-2xl font-bold text-white mb-2 leading-tight"></h2>
+                
+                <div class="flex items-center justify-center gap-3 text-sm text-slate-400 mb-4">
+                    <span id="movieYear" class="bg-slate-700 px-2 py-0.5 rounded text-slate-300"></span>
+                    <span class="flex items-center gap-1"><i class="fas fa-star text-yellow-500 text-xs"></i> <span id="movieRating"></span></span>
+                    <span id="movieRuntime"></span>
+                </div>
+
+                <div class="bg-slate-900/50 rounded-lg p-4 mb-4 border border-slate-700/50">
+                    <span class="text-xs text-slate-400 uppercase tracking-wide block mb-2">Streaming On:</span>
+                    <div id="moviePlatform" class="flex flex-wrap justify-center gap-2 text-amber-400 font-semibold text-sm"></div>
+                </div>
+
+                <p id="moviePlot" class="text-slate-300 text-sm italic mb-6 leading-relaxed"></p>
+                
+                <!-- AI Hype Box -->
+                <div id="hypeBox" class="hidden bg-purple-900/20 border border-purple-500/30 rounded-lg p-4 mb-6 text-left">
+                    <div class="flex items-center gap-2 mb-2 text-purple-400 text-xs font-bold uppercase">
+                        <i class="fas fa-sparkles"></i> AI Hype
+                    </div>
+                    <p id="hypeText" class="text-slate-200 text-sm leading-relaxed"></p>
+                </div>
+
+                <div class="grid grid-cols-2 gap-2 mb-3">
+                    <button onclick="copyTitle()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-medium py-2 rounded transition-colors">
+                        <i class="far fa-copy mr-1"></i> Copy Name
+                    </button>
+                    <a id="searchLink" href="#" target="_blank" class="bg-amber-700 hover:bg-amber-600 text-white text-sm font-medium py-2 rounded transition-colors text-center no-underline flex items-center justify-center">
+                        <i class="fas fa-play-circle mr-1"></i> Watch
+                    </a>
+                </div>
+                
+                <!-- AI Hype Button -->
+                <button onclick="generateHype()" id="hypeBtn" class="w-full btn-ai text-white text-sm font-medium py-2 rounded transition-colors flex items-center justify-center gap-2">
+                    <span>✨ Why Watch This? (AI)</span>
+                </button>
+
+                <div class="text-[10px] text-slate-500 mt-2">
+                    *Link searches Google for streaming options
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State / Error -->
+        <div id="errorMsg" class="hidden mt-4 text-center text-rose-400 text-sm"></div>
+
+    </div>
+
+    <script>
+        const apiKey = ""; // Set by environment
+
+        // --- DATABASE ---
+        const movieDatabase = {
+            "Mass Action": [
+                { title: "Salaar: Part 1", year: "2023", rating: "7.1", runtime: "2h 55m", plot: "A gang leader tries to keep a promise made to his dying friend and takes on the other criminal gangs.", platform: "Netflix" },
+                { title: "RRR", year: "2022", rating: "8.0", runtime: "3h 2m", plot: "A fearless warrior on a perilous mission comes face to face with a steely cop serving the British forces in this epic saga.", platform: "Zee5 / Netflix / Hotstar" },
+                { title: "Pushpa: The Rise", year: "2021", rating: "7.6", runtime: "2h 59m", plot: "A labourer rises through the ranks of a red sandal smuggling syndicate, making some powerful enemies in the process.", platform: "Amazon Prime Video" },
+                { title: "Baahubali: The Beginning", year: "2015", rating: "8.0", runtime: "2h 39m", plot: "In ancient India, an adventurous and daring man becomes involved in a decades-old feud between two warring people.", platform: "Disney+ Hotstar / Netflix" },
+                { title: "Sarrainodu", year: "2016", rating: "6.5", runtime: "2h 40m", plot: "An intense battle breaks out between an evil son of a politician and an ex-army man who can't tolerate injustice.", platform: "SunNXT / YouTube" },
+                { title: "Waltair Veerayya", year: "2023", rating: "6.4", runtime: "2h 40m", plot: "A fisherman who smuggles goods gets involved in a bigger heist that connects to his dark past.", platform: "Netflix" },
+                { title: "Pokiri", year: "2006", rating: "8.0", runtime: "2h 48m", plot: "A money-minded criminal kills anyone for money. However, a police officer tries to approach him to join a gang.", platform: "Disney+ Hotstar" },
+                { title: "Akhanda", year: "2021", rating: "6.7", runtime: "2h 47m", plot: "A fierce devotee of Lord Shiva battles against evil forces to protect a region from a ruthless mining mafia.", platform: "Disney+ Hotstar" }
+            ],
+            "Fantasy": [
+                { title: "Kalki 2898 AD", year: "2024", rating: "7.8", runtime: "3h 1m", plot: "A modern-day avatar of Vishnu descends to Earth to protect the world from evil forces.", platform: "Netflix / Prime Video" },
+                { title: "Hanu-Man", year: "2024", rating: "8.0", runtime: "2h 38m", plot: "An imaginary place called Anjanadri where the protagonist gets the powers of Hanuman and fights for Anjanadri.", platform: "Zee5" },
+                { title: "Eega", year: "2012", rating: "7.7", runtime: "2h 25m", plot: "A murdered man is reincarnated as a housefly and seeks to avenge his death.", platform: "Amazon Prime Video" },
+                { title: "Karthikeya 2", year: "2022", rating: "7.9", runtime: "2h 30m", plot: "A sequel to the mystic thriller Karthikeya, dealing with the personal problems of Karthikeya and the power of ancient beliefs.", platform: "Zee5" },
+                { title: "Arundhati", year: "2009", rating: "7.3", runtime: "2h 9m", plot: "A brave queen battles an evil mystic who returns from the dead to wreak havoc on her family.", platform: "SunNXT / YouTube" },
+                { title: "Mayabazar", year: "1957", rating: "9.1", runtime: "3h 12m", plot: "Balarama promises his daughter to Abhimanyu, but when the Pandavas lose their kingdom, things take a magical turn.", platform: "YouTube / Prime Video" },
+                { title: "Yamadonga", year: "2007", rating: "7.2", runtime: "2h 55m", plot: "A thief dies and goes to Yamaloka, where he tricks the god of death to get his life back.", platform: "Amazon Prime Video" }
+            ],
+            "Comedy": [
+                { title: "Mathu Vadalara", year: "2019", rating: "8.2", runtime: "2h 10m", plot: "Delivery boys get entangled in a crime they didn't commit, leading to a hilarious confusion.", platform: "Amazon Prime Video" },
+                { title: "Jathi Ratnalu", year: "2021", rating: "7.3", runtime: "2h 28m", plot: "Three happy-go-lucky friends end up in jail in Hyderabad and learn a new path to earn respect and dignity.", platform: "Amazon Prime Video" },
+                { title: "Brochevarevarura", year: "2019", rating: "8.0", runtime: "2h 17m", plot: "Three students who fail in exams waste their time. They are joined by a friend who needs help with a kidnapping plan.", platform: "Amazon Prime Video" },
+                { title: "Pelli Choopulu", year: "2016", rating: "8.2", runtime: "2h 10m", plot: "A lazy engineering graduate and a focused ambitious girl meet during a matchmaking event and their lives change forever.", platform: "SunNXT / YouTube" },
+                { title: "Nuvvu Naaku Nachav", year: "2001", rating: "8.7", runtime: "2h 55m", plot: "Venkatesh joins a woman's house to help arrange her marriage, but things take a hilarious turn when they bond.", platform: "Disney+ Hotstar" },
+                { title: "F2: Fun and Frustration", year: "2019", rating: "6.4", runtime: "2h 28m", plot: "Two men try to control their domineering wives but their chauvinistic attitude lands them in trouble.", platform: "Amazon Prime Video" },
+                { title: "Dhee", year: "2007", rating: "7.5", runtime: "2h 37m", plot: "A witty man joins a gang to win the love of the don's sister, leading to a laugh riot.", platform: "YouTube (Sri Balaji)" }
+            ],
+            "Drama": [
+                { title: "Hi Nanna", year: "2023", rating: "8.2", runtime: "2h 35m", plot: "A single father lives with his 6-year-old daughter. Their life changes when a woman saves the child from an accident.", platform: "Netflix" },
+                { title: "Balagam", year: "2023", rating: "8.1", runtime: "2h 13m", plot: "In a village in Telangana, a family feud ensues after the death of the patriarch, affecting the entire village.", platform: "Amazon Prime Video" },
+                { title: "Jersey", year: "2019", rating: "8.5", runtime: "2h 40m", plot: "A failed cricketer decides to return to cricket in his late thirties driven by the desire to fulfill his son's wish.", platform: "Zee5" },
+                { title: "Mahanati", year: "2018", rating: "8.4", runtime: "2h 57m", plot: "Biography of Savitri, an actress from South India, who ruled the industry for two decades during the 50s and 60s.", platform: "Amazon Prime Video" },
+                { title: "C/o Kancharapalem", year: "2018", rating: "8.8", runtime: "2h 32m", plot: "Four love stories spanning across age, religion, and status unfold in a small Indian town.", platform: "Netflix" },
+                { title: "Srimanthudu", year: "2015", rating: "7.5", runtime: "2h 43m", plot: "A multi-millionaire heir adopts a village to improve its infrastructure and the lives of its people.", platform: "YouTube / Zee5" },
+                { title: "Sita Ramam", year: "2022", rating: "8.6", runtime: "2h 43m", plot: "An orphan soldier, Lieutenant Ram's life changes after he gets a letter from a girl named Sita.", platform: "Amazon Prime Video" }
+            ],
+            "Thriller": [
+                { title: "Virupaksha", year: "2023", rating: "7.2", runtime: "2h 25m", plot: "Mysterious deaths occur in a village due to an unknown person's occult practice. The whole village is afraid.", platform: "Netflix" },
+                { title: "Kshanam", year: "2016", rating: "8.1", runtime: "1h 58m", plot: "An investment banker comes to India from San Francisco to help his ex-girlfriend find her missing daughter.", platform: "SunNXT" },
+                { title: "Goodachari", year: "2018", rating: "7.8", runtime: "2h 27m", plot: "A young NSA agent is framed for the murder of his bosses on his first day of work.", platform: "Amazon Prime Video" },
+                { title: "HIT: The First Case", year: "2020", rating: "7.6", runtime: "2h 5m", plot: "A police officer of the Homicide Intervention Team must overcome his own traumatic past to solve a case.", platform: "Amazon Prime Video" },
+                { title: "Evaru", year: "2019", rating: "7.8", runtime: "1h 58m", plot: "Sub-inspector Vikram Vasudev is entrusted with the task of investigating the murder of a high-ranking officer.", platform: "Amazon Prime Video" },
+                { title: "U-Turn", year: "2018", rating: "7.0", runtime: "2h 8m", plot: "A journalist gets involved in a series of mysterious deaths of motorists who make illegal U-turns.", platform: "Amazon Prime Video" }
+            ],
+            "Romance": [
+                { title: "Baby", year: "2023", rating: "7.5", runtime: "2h 55m", plot: "A story about first love, heartbreak, and how relationships change as people grow apart.", platform: "Aha" },
+                { title: "Fidaa", year: "2017", rating: "7.4", runtime: "2h 22m", plot: "Varun, an NRI medical student, and Bhanu, a vibrant, young woman, fall in love despite their differences.", platform: "Amazon Prime Video" },
+                { title: "Bommarillu", year: "2006", rating: "8.1", runtime: "2h 50m", plot: "A young man, who is tired of his father's excessive control over his life, falls in love with a vibrant girl.", platform: "YouTube / Zee5" },
+                { title: "Geetha Govindam", year: "2018", rating: "7.7", runtime: "2h 22m", plot: "An innocent young lecturer is misunderstood as a pervert and despised by the woman he loves.", platform: "Zee5 / Disney+ Hotstar" },
+                { title: "Tholi Prema", year: "1998", rating: "8.3", runtime: "2h 23m", plot: "Balu, a fun-loving man, falls in love with Anu. However, he struggles to express his feelings to her.", platform: "YouTube / Hotstar" },
+                { title: "Oohalu Gusagusalade", year: "2014", rating: "7.8", runtime: "2h 25m", plot: "A young man who aspires to become a news reader faces a condition set by his boss to get the job.", platform: "YouTube / SunNXT" }
+            ]
+        };
+
+        // --- STATE ---
+        let seenMoviesState = {};
+        let currentMovieTitle = "";
+
+        // --- TABS LOGIC ---
+        function switchTab(tab) {
+            const manualSection = document.getElementById('manual-section');
+            const aiSection = document.getElementById('ai-section');
+            const tabManual = document.getElementById('tab-manual');
+            const tabAi = document.getElementById('tab-ai');
+            const resultContainer = document.getElementById('resultContainer');
+            const errorMsg = document.getElementById('errorMsg');
+
+            // Reset UI
+            resultContainer.classList.add('hidden');
+            errorMsg.classList.add('hidden');
+
+            if (tab === 'manual') {
+                manualSection.classList.remove('hidden');
+                aiSection.classList.add('hidden');
+                
+                tabManual.classList.add('text-amber-500', 'border-b-2', 'border-amber-500');
+                tabManual.classList.remove('text-slate-400');
+                
+                tabAi.classList.remove('text-amber-500', 'border-b-2', 'border-amber-500');
+                tabAi.classList.add('text-slate-400');
+            } else {
+                manualSection.classList.add('hidden');
+                aiSection.classList.remove('hidden');
+
+                tabAi.classList.add('text-amber-500', 'border-b-2', 'border-amber-500');
+                tabAi.classList.remove('text-slate-400');
+
+                tabManual.classList.remove('text-amber-500', 'border-b-2', 'border-amber-500');
+                tabManual.classList.add('text-slate-400');
+            }
+        }
+
+        // --- SHARED FUNCTIONS ---
+        function resetCycle() {
+            document.getElementById('resetToast').classList.add('hidden');
+            document.getElementById('resultContainer').classList.add('hidden');
+            document.getElementById('errorMsg').classList.add('hidden');
+        }
+
+        function renderMovie(movie) {
+            currentMovieTitle = movie.title;
+
+            // Text
+            document.getElementById('movieTitle').innerText = movie.title;
+            document.getElementById('movieYear').innerText = movie.year;
+            document.getElementById('movieRating').innerText = movie.rating + "/10";
+            document.getElementById('movieRuntime').innerText = movie.runtime;
+            document.getElementById('moviePlot').innerText = `"${movie.plot}"`;
+
+            // Platform Tags
+            const platformContainer = document.getElementById('moviePlatform');
+            platformContainer.innerHTML = '';
+            const platforms = movie.platform ? movie.platform.split('/').map(p => p.trim()) : ["Check Online"];
+            platforms.forEach(p => {
+                const span = document.createElement('span');
+                span.className = 'platform-tag';
+                span.innerText = p;
+                platformContainer.appendChild(span);
+            });
+
+            // Links
+            const searchQuery = `watch ${movie.title} telugu movie online`;
+            document.getElementById('searchLink').href = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
+
+            // Reset Hype Box
+            document.getElementById('hypeBox').classList.add('hidden');
+            document.getElementById('hypeBtn').classList.remove('hidden');
+            
+            // Show Result
+            document.getElementById('resultContainer').classList.remove('hidden');
+            document.getElementById('resultContainer').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        function copyTitle() {
+            const title = document.getElementById('movieTitle').innerText;
+            navigator.clipboard.writeText(title).then(() => {
+                const copyBtn = document.querySelector('button[onclick="copyTitle()"]');
+                const originalHtml = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="fas fa-check mr-1"></i> Copied!';
+                copyBtn.classList.add('text-green-400');
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalHtml;
+                    copyBtn.classList.remove('text-green-400');
+                }, 2000);
+            });
+        }
+
+        // --- MANUAL PICKER LOGIC ---
+        function pickMovie() {
+            const genreSelect = document.getElementById('genre');
+            const errorMsg = document.getElementById('errorMsg');
+            const pickBtn = document.getElementById('pickBtn');
+            const btnText = pickBtn.querySelector('span');
+            const btnIcon = pickBtn.querySelector('i');
+            const resetToast = document.getElementById('resetToast');
+
+            const selectedGenre = genreSelect.value;
+            errorMsg.classList.add('hidden');
+            resetToast.classList.add('hidden');
+            
+            if (!selectedGenre) {
+                errorMsg.innerText = "Please select a genre first!";
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+
+            if (!seenMoviesState[selectedGenre]) seenMoviesState[selectedGenre] = [];
+
+            const allMoviesInGenre = movieDatabase[selectedGenre];
+            let availableIndices = allMoviesInGenre.map((_, index) => index)
+                .filter(index => !seenMoviesState[selectedGenre].includes(index));
+
+            let pickedIndex;
+            let didReset = false;
+
+            if (availableIndices.length === 0) {
+                seenMoviesState[selectedGenre] = [];
+                availableIndices = allMoviesInGenre.map((_, index) => index);
+                didReset = true;
+            }
+
+            const randomIndex = Math.floor(Math.random() * availableIndices.length);
+            pickedIndex = availableIndices[randomIndex];
+            seenMoviesState[selectedGenre].push(pickedIndex);
+
+            // Loading
+            const originalText = btnText.innerText;
+            btnText.innerText = "Finding Movie...";
+            btnIcon.classList.remove('fa-film');
+            btnIcon.classList.add('loader', 'border-white', 'border-t-transparent', 'w-4', 'h-4');
+            pickBtn.disabled = true;
+
+            setTimeout(() => {
+                renderMovie(allMoviesInGenre[pickedIndex]);
+                if (didReset) resetToast.classList.remove('hidden');
+                
+                // Reset Btn
+                btnText.innerText = originalText;
+                btnIcon.classList.remove('loader', 'border-white', 'border-t-transparent', 'w-4', 'h-4');
+                btnIcon.classList.add('fa-film');
+                pickBtn.disabled = false;
+            }, 500);
+        }
+
+        // --- GEMINI API HELPERS ---
+        async function callGemini(prompt) {
+             const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+             
+             try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }]
+                    })
+                });
+
+                if (!response.ok) throw new Error("API Error");
+                const data = await response.json();
+                return data.candidates[0].content.parts[0].text;
+             } catch (e) {
+                 console.error(e);
+                 throw e;
+             }
+        }
+
+        // --- FEATURE 1: AI MOOD PICKER ---
+        async function askAIForMovie() {
+            const userPrompt = document.getElementById('ai-prompt').value.trim();
+            const btn = document.getElementById('aiPickBtn');
+            const btnText = btn.querySelector('span');
+            const btnIcon = btn.querySelector('i');
+            const errorMsg = document.getElementById('errorMsg');
+
+            if (!userPrompt) {
+                errorMsg.innerText = "Please describe what kind of movie you want.";
+                errorMsg.classList.remove('hidden');
+                return;
+            }
+            errorMsg.classList.add('hidden');
+
+            // UI Loading
+            const originalText = btnText.innerText;
+            btnText.innerText = "AI is thinking...";
+            btnIcon.classList.remove('fa-magic');
+            btnIcon.classList.add('loader', 'border-white', 'border-t-transparent', 'w-4', 'h-4');
+            btn.disabled = true;
+
+            // Prompt Engineering
+            const systemPrompt = `
+                You are a Tollywood expert. Recommend exactly ONE Telugu movie based on this request: "${userPrompt}".
+                Return the response in strictly valid JSON format with no markdown formatting.
+                Structure: { "title": "Movie Title", "year": "Year", "rating": "IMDb Rating", "runtime": "Runtime", "plot": "Short 1 sentence plot summary", "platform": "Streaming Platform Name (e.g. Netflix, Prime)" }
+                If the request is unrelated to movies, return a JSON with title "Error" and plot "I can only recommend Telugu movies.".
+            `;
+
+            try {
+                const rawText = await callGemini(systemPrompt);
+                // Clean markdown if present
+                const cleanJson = rawText.replace(/```json|```/g, '').trim();
+                const movieData = JSON.parse(cleanJson);
+
+                if (movieData.title === "Error") {
+                    errorMsg.innerText = movieData.plot;
+                    errorMsg.classList.remove('hidden');
+                } else {
+                    renderMovie(movieData);
+                }
+            } catch (err) {
+                errorMsg.innerText = "AI is busy or error occurred. Try again.";
+                errorMsg.classList.remove('hidden');
+            } finally {
+                btnText.innerText = originalText;
+                btnIcon.classList.remove('loader', 'border-white', 'border-t-transparent', 'w-4', 'h-4');
+                btnIcon.classList.add('fa-magic');
+                btn.disabled = false;
+            }
+        }
+
+        // --- FEATURE 2: AI HYPE GENERATOR ---
+        async function generateHype() {
+            const hypeBtn = document.getElementById('hypeBtn');
+            const hypeBtnText = hypeBtn.querySelector('span');
+            const hypeBox = document.getElementById('hypeBox');
+            const hypeText = document.getElementById('hypeText');
+
+            if (!currentMovieTitle) return;
+
+            // Loading
+            hypeBtn.disabled = true;
+            hypeBtnText.innerText = "Generating Hype...";
+
+            const prompt = `Write a 2-sentence energetic, exciting "hype" pitch for the Telugu movie "${currentMovieTitle}". Tell the user why it's amazing. Use emojis.`;
+
+            try {
+                const text = await callGemini(prompt);
+                hypeText.innerText = text;
+                hypeBtn.classList.add('hidden');
+                hypeBox.classList.remove('hidden');
+            } catch (err) {
+                alert("Could not generate hype right now.");
+            } finally {
+                hypeBtn.disabled = false;
+                hypeBtnText.innerText = "✨ Why Watch This? (AI)";
+            }
+        }
+    </script>
+</body>
+</html>
